@@ -5,8 +5,8 @@ spring:
     name: spribe
   datasource:
     url: jdbc:postgresql://localhost:5432/booking
-    username: postgres
-    password: postgres
+    username: dmtrius
+    password: enter
     jpa:
       hibernate:
         ddl-auto: validate

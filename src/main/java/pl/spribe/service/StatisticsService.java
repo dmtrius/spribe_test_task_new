@@ -5,6 +5,7 @@ import com.hazelcast.map.IMap;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import pl.spribe.dto.StatisticsDTO;
 import pl.spribe.entity.Booking;
@@ -21,6 +22,7 @@ public class StatisticsService {
 
     private final UnitRepository unitRepository;
     private final BookingRepository bookingRepository;
+    @Qualifier("mainHazel")
     private final HazelcastInstance hazelcastInstance;
     private IMap<String, Integer> cache;
 
@@ -44,7 +46,6 @@ public class StatisticsService {
         log.info("Accessing Hazelcast map");
         cache = hazelcastInstance.getMap("unitAvailabilityCache");
         log.info("Initialization completed");
-
         log.info("Initializing StatisticsService");
         try {
             if (!Objects.isNull(hazelcastInstance)) {

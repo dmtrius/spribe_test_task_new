@@ -5,26 +5,29 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 @EnableCaching
 @Configuration
 public class HazelcastConfig {
-    @Bean
+    @Primary
+    @Bean("mainHazel")
     public HazelcastInstance hazelcastInstance() {
         Config config = new Config();
         config.setInstanceName("hazelcast-instance");
 
         // Network configuration
-        config.getNetworkConfig().setPort(5702);
+        config.getNetworkConfig().setPort(5701);
         config.getNetworkConfig().setPortAutoIncrement(true);
         config.getNetworkConfig().setPortCount(100);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().setPublicAddress("0.0.0.0");
-        config.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1:5702");
+        config.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1:5701");
         config.getJetConfig().setEnabled(false);
     
 
@@ -42,7 +45,7 @@ public class HazelcastConfig {
     }
 
     @Bean(destroyMethod = "shutdown")
-    public HazelcastInstance hazelcastInstanceShutdown(HazelcastInstance hazelcastInstance) {
+    public HazelcastInstance hazelcastInstanceShutdown(@Qualifier("mainHazel") HazelcastInstance hazelcastInstance) {
         return hazelcastInstance;
     }
 }
