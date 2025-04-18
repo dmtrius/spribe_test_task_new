@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!-- USERS TABLE -->
+    <changeSet id="1" author="dg">
+        <createTable tableName="users">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false" unique="true"/>
+            </column>
+            <column name="username" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="full_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <sql>
+            ALTER TABLE users ADD CONSTRAINT chk_users_role CHECK (role IN ('ADMIN', 'USER'));
+        </sql>
+        <sql>
+            ALTER TABLE users ADD CONSTRAINT chk_users_status CHECK (status IN ('ACTIVE', 'INACTIVE'));
+        </sql>
+    </changeSet>
+
+    <!-- UNITS TABLE -->
+    <changeSet id="2" author="dg">
+        <createTable tableName="units">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false" unique="true"/>
+            </column>
+            <column name="rooms" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accommodation_type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="floor" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cost" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+        </createTable>
+        <sql>
+            ALTER TABLE units ADD CONSTRAINT chk_units_accommodation_type CHECK (accommodation_type IN ('HOME', 'FLAT', 'APARTMENTS'));
+        </sql>
+        <addUniqueConstraint tableName="units" columnNames="rooms,accommodation_type,floor,description"
+            constraintName="uq_units_properties"/>
+    </changeSet>
+
+    <!-- BOOKINGS TABLE -->
+    <changeSet id="3" author="dg">
+        <createTable tableName="bookings">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false" unique="true"/>
+            </column>
+            <column name="unit_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="start_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="end_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="bookings" baseColumnNames="unit_id"
+            referencedTableName="units" referencedColumnNames="id" constraintName="fk_bookings_unit"/>
+        <addForeignKeyConstraint baseTableName="bookings" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id" constraintName="fk_bookings_user"/>
+        <sql>
+            ALTER TABLE bookings ADD CONSTRAINT chk_bookings_status CHECK (status IN ('BOOKED', 'PAID', 'CANCELLED'));
+        </sql>
+    </changeSet>
+
+    <!-- PAYMENTS TABLE -->
+    <changeSet id="4" author="dg">
+        <createTable tableName="payments">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false" unique="true"/>
+            </column>
+            <column name="booking_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="paid" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="paid_at" type="TIMESTAMP"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="payments" baseColumnNames="booking_id"
+            referencedTableName="bookings" referencedColumnNames="id" constraintName="fk_payments_booking"/>
+    </changeSet>
+
+    <!-- EVENTS TABLE -->
+    <changeSet id="5" author="dg">
+        <createTable tableName="events">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false" unique="true"/>
+            </column>
+            <column name="unit_id" type="BIGINT"/>
+            <column name="event_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="events" baseColumnNames="unit_id"
+            referencedTableName="units" referencedColumnNames="id" constraintName="fk_events_unit" deferrable="true"/>
+        <sql>
+            ALTER TABLE events ADD CONSTRAINT chk_events_event_type CHECK (event_type IN ('UNIT_CREATED','UNIT_UPDATED','BOOKING_CREATED','BOOKING_CANCELLED','PAYMENT_MADE','PAYMENT_FAILED','USER_CREATED','USER_UPDATED','USER_DELETED'));
+        </sql>
+    </changeSet>
+
+    <!-- SAMPLE DATA FOR USERS (20 users) -->
+    <changeSet id="6" author="dg">
+        <insert tableName="users">
+            <column name="username" value="admin"/>
+            <column name="full_name" value="Administrator"/>
+            <column name="role" value="ADMIN"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T09:00:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="johndoe"/>
+            <column name="full_name" value="John Doe"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T09:10:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="janedoe"/>
+            <column name="full_name" value="Jane Doe"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T09:20:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user1"/>
+            <column name="full_name" value="User One"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T10:00:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user2"/>
+            <column name="full_name" value="User Two"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T10:10:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user3"/>
+            <column name="full_name" value="User Three"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T10:20:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user4"/>
+            <column name="full_name" value="User Four"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T10:30:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user5"/>
+            <column name="full_name" value="User Five"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T10:40:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user6"/>
+            <column name="full_name" value="User Six"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T10:50:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user7"/>
+            <column name="full_name" value="User Seven"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T11:00:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user8"/>
+            <column name="full_name" value="User Eight"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T11:10:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user9"/>
+            <column name="full_name" value="User Nine"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T11:20:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user10"/>
+            <column name="full_name" value="User Ten"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T11:30:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user11"/>
+            <column name="full_name" value="User Eleven"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T11:40:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user12"/>
+            <column name="full_name" value="User Twelve"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T11:50:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user13"/>
+            <column name="full_name" value="User Thirteen"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T12:00:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user14"/>
+            <column name="full_name" value="User Fourteen"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T12:10:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user15"/>
+            <column name="full_name" value="User Fifteen"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T12:20:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user16"/>
+            <column name="full_name" value="User Sixteen"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T12:30:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user17"/>
+            <column name="full_name" value="User Seventeen"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T12:40:00"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="user18"/>
+            <column name="full_name" value="User Eighteen"/>
+            <column name="role" value="USER"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="created_at" valueDate="2024-04-01T12:50:00"/>
+        </insert>
+    </changeSet>
+    <changeSet id="7" author="dg">
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="3"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="floor" valueNumeric="1"/>
+            <column name="cost" valueNumeric="100.00"/>
+            <column name="description" value="Cozy 3-room home on the first floor"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="floor" valueNumeric="2"/>
+            <column name="cost" valueNumeric="80.00"/>
+            <column name="description" value="Modern flat on the second floor"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="1"/>
+            <column name="accommodation_type" value="APARTMENTS"/>
+            <column name="floor" valueNumeric="5"/>
+            <column name="cost" valueNumeric="120.00"/>
+            <column name="description" value="Spacious apartment on the fifth floor"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="4"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="floor" valueNumeric="3"/>
+            <column name="cost" valueNumeric="150.00"/>
+            <column name="description" value="Large family home"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="floor" valueNumeric="4"/>
+            <column name="cost" valueNumeric="90.00"/>
+            <column name="description" value="Bright flat with balcony"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="1"/>
+            <column name="accommodation_type" value="APARTMENTS"/>
+            <column name="floor" valueNumeric="6"/>
+            <column name="cost" valueNumeric="130.00"/>
+            <column name="description" value="Penthouse apartment"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="3"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="floor" valueNumeric="2"/>
+            <column name="cost" valueNumeric="110.00"/>
+            <column name="description" value="Home with garden"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="floor" valueNumeric="5"/>
+            <column name="cost" valueNumeric="95.00"/>
+            <column name="description" value="Flat with city view"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="1"/>
+            <column name="accommodation_type" value="APARTMENTS"/>
+            <column name="floor" valueNumeric="7"/>
+            <column name="cost" valueNumeric="140.00"/>
+            <column name="description" value="Luxury apartment"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="4"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="floor" valueNumeric="1"/>
+            <column name="cost" valueNumeric="160.00"/>
+            <column name="description" value="Country house"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="floor" valueNumeric="3"/>
+            <column name="cost" valueNumeric="85.00"/>
+            <column name="description" value="Central flat"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="1"/>
+            <column name="accommodation_type" value="APARTMENTS"/>
+            <column name="floor" valueNumeric="8"/>
+            <column name="cost" valueNumeric="145.00"/>
+            <column name="description" value="Apartment with terrace"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="3"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="floor" valueNumeric="2"/>
+            <column name="cost" valueNumeric="115.00"/>
+            <column name="description" value="Home near park"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="floor" valueNumeric="6"/>
+            <column name="cost" valueNumeric="100.00"/>
+            <column name="description" value="Flat with parking"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="1"/>
+            <column name="accommodation_type" value="APARTMENTS"/>
+            <column name="floor" valueNumeric="9"/>
+            <column name="cost" valueNumeric="150.00"/>
+            <column name="description" value="Studio apartment"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="4"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="floor" valueNumeric="2"/>
+            <column name="cost" valueNumeric="170.00"/>
+            <column name="description" value="Executive home"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="floor" valueNumeric="7"/>
+            <column name="cost" valueNumeric="105.00"/>
+            <column name="description" value="Flat with two bedrooms"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="1"/>
+            <column name="accommodation_type" value="APARTMENTS"/>
+            <column name="floor" valueNumeric="10"/>
+            <column name="cost" valueNumeric="155.00"/>
+            <column name="description" value="Top floor apartment"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="3"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="floor" valueNumeric="3"/>
+            <column name="cost" valueNumeric="120.00"/>
+            <column name="description" value="Home with pool"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="floor" valueNumeric="8"/>
+            <column name="cost" valueNumeric="110.00"/>
+            <column name="description" value="Flat with elevator"/>
+        </insert>
+        <insert tableName="units">
+            <column name="rooms" valueNumeric="1"/>
+            <column name="accommodation_type" value="APARTMENTS"/>
+            <column name="floor" valueNumeric="11"/>
+            <column name="cost" valueNumeric="160.00"/>
+            <column name="description" value="Designer apartment"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

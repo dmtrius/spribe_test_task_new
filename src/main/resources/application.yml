@@ -1,0 +1,56 @@
+spring:
+  main:
+    allow-bean-definition-overriding: false
+  application:
+    name: spribe
+  datasource:
+    url: jdbc:postgresql://localhost:5432/booking
+    username: postgres
+    password: postgres
+    jpa:
+      hibernate:
+        ddl-auto: validate
+      show-sql: true
+      properties:
+        hibernate:
+          format_sql: true
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+server:
+  port: 8080
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+# hazelcast:
+#   network:
+#     public-address: 0.0.0.0
+#     join:
+#       multicast:
+#         enabled: true
+#       tcp-ip:
+#         enabled: false
+#     port:
+#       auto-increment: true
+#       port: 5702
+#       port-count: 100
+#     interfaces:
+#       enabled: true
+#       interfaces:
+#         - 192.168.0.52
+#   map:
+#     my-cache:
+#       time-to-live-seconds: 3600
+#       max-idle-seconds: 1800
+
+logging:
+  level:
+    # org.springframework: DEBUG
+    com.hazelcast: DEBUG
+    pl.spribe: DEBUG
+
+schedule:
+  cancel_unpaid_bookings_rate: 60000
