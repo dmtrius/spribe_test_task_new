@@ -5,9 +5,10 @@ spring:
     name: spribe
   datasource:
     url: jdbc:postgresql://localhost:5432/booking
-    username: dmtrius
-    password: enter
+    username: postgres
+    password: postgres
     jpa:
+      open-in-view: false
       hibernate:
         ddl-auto: validate
       show-sql: true
@@ -19,10 +20,14 @@ spring:
 
 server:
   port: 8080
+
 springdoc:
+  packagesToScan: pl.spribe.controller
   swagger-ui:
+    enebled: true
     path: /swagger-ui.html
   api-docs:
+    enabled: true
     path: /v3/api-docs
 
 # hazelcast:
