@@ -14,11 +14,10 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Statistics Service API")
+                        .title("Booking Service API")
                         .version("1.0.0")
-                        .description("API documentation for the Statistics Service with Hazelcast integration")
-                        .termsOfService("http://example.com/terms")
-                        .license(new License().name("Apache 2.0").url("http://springdoc.org")));
+                        .description("API documentation for the Booking Service with Hazelcast integration")
+                        .license(new License().name("Apache 2.0").url("https://springdoc.org")));
     }
 
     @Bean
@@ -26,7 +25,7 @@ public class OpenApiConfig {
         return GroupedOpenApi.builder()
                 .group("public")
                 .packagesToScan("pl.spribe.controller")
-                .pathsToMatch("/**")
+                .pathsToMatch("/api/**")
                 .build();
     }
 }

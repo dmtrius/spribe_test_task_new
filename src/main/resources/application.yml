@@ -20,10 +20,14 @@ spring:
 
 server:
   port: 8080
+
 springdoc:
+  packagesToScan: pl.spribe.controller
   swagger-ui:
+    enebled: true
     path: /swagger-ui.html
   api-docs:
+    enabled: true
     path: /v3/api-docs
 
 # hazelcast:
