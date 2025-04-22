@@ -6,7 +6,10 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.spribe.dto.StatisticsDTO;
 import pl.spribe.entity.Booking;
 import pl.spribe.entity.Unit;
@@ -14,7 +17,6 @@ import pl.spribe.repository.BookingRepository;
 import pl.spribe.repository.UnitRepository;
 
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -22,7 +24,6 @@ public class StatisticsService {
 
     private final UnitRepository unitRepository;
     private final BookingRepository bookingRepository;
-    @Qualifier("mainHazel")
     private final HazelcastInstance hazelcastInstance;
     private IMap<String, Integer> cache;
 
@@ -30,31 +31,29 @@ public class StatisticsService {
 
     public StatisticsService(UnitRepository unitRepository,
                              BookingRepository bookingRepository,
-                             HazelcastInstance hazelcastInstance) {
+                             @Qualifier("mainHazel") HazelcastInstance hazelcastInstance) {
         this.unitRepository = unitRepository;
         this.bookingRepository = bookingRepository;
         this.hazelcastInstance = hazelcastInstance;
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        log.info("Application is ready, initializing StatisticsService");
+        init();
+        log.info("StatisticsService initialized successfully");
+    }
+
     // @PostConstruct
     public void init() {
-        log.info("Starting initialization of StatisticsService");
-        if (Objects.isNull(hazelcastInstance)) {
-            log.error("HazelcastInstance is null");
-            throw new IllegalStateException("HazelcastInstance is not initialized");
-        }
         log.info("Accessing Hazelcast map");
         cache = hazelcastInstance.getMap("unitAvailabilityCache");
         log.info("Initialization completed");
         log.info("Initializing StatisticsService");
         try {
-            if (!Objects.isNull(hazelcastInstance)) {
-                IMap<String, Object> jobRecords = hazelcastInstance.getMap("__jet.jobs");
-                jobRecords.putIfAbsent("init", "done");
-                log.info("Job records IMap initialized");
-            } else {
-                log.warn("Hazelcast cluster not ready or HazelcastInstance is null, skipping initialization");
-            }
+            IMap<String, Object> jobRecords = hazelcastInstance.getMap("__jet.jobs");
+            jobRecords.putIfAbsent("init", "done");
+            log.info("Job records IMap initialized");
         } catch (Exception e) {
             log.error("Failed to initialize job records IMap", e);
         }
@@ -71,11 +70,8 @@ public class StatisticsService {
         return cached;
     }
 
+    @Transactional(readOnly = true)
     public StatisticsDTO getStatisticsSummary() {
-        init();
-        if (Objects.isNull(hazelcastInstance) || Objects.isNull(this.cache)) {
-            init();
-        }
         int totalUnits = (int) unitRepository.count();
         int availableUnits = getAvailableUnitsCount();
 
